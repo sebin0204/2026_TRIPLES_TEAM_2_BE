@@ -1,10 +1,10 @@
-package com.team2.backend;
+package com.team2.fabackend;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class BackendApplicationTests {
+class FaBackendApplicationTests {
 
     @Test
     void contextLoads() {

@@ -6,7 +6,7 @@ plugins {
 
 group = 'com.team2'
 version = '0.0.1-SNAPSHOT'
-description = 'backend'
+description = 'FABackend'
 
 java {
     toolchain {
