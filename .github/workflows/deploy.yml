@@ -80,10 +80,10 @@ jobs:
 
             aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin "$ECR_REGISTRY"
             docker pull "$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
-            docker stop sikbbang-app || true
-            docker rm sikbbang-app || true
-
-            docker run -d --name sikbbang-app --restart unless-stopped \
+            docker stop fa-project-backend-app || true
+            docker rm fa-project-backend-app || true
+            
+            docker run -d --name fa-project-backend-app --restart unless-stopped \
               -p 8080:8080 \
               -e TZ=Asia/Seoul \
               -e SPRING_PROFILES_ACTIVE=local \
