@@ -19,15 +19,11 @@
      </br>
   ```docker ps```
 
-### Contributing
-See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidelines.
+### 기여 방식
+[CONTRIBUTING.md](CONTRIBUTING.md)
 
 ### 이슈 생성
-<a href="./.github/ISSUE_TEMPLATE">
-    탬플릿
-</a>
+.[./.github/ISSUE_TEMPLATE](ISSUE_TEMPLATES)
 
 ### PR 생성
-<a href="./.github/PULL_REQUEST_TEMPLATE.md">
-    탬플릿
-</a>
+.[./.github/PULL_REQUEST_TEMPLATE.md](PULL_REQUEST_TEMPLATE.md)
