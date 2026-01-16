@@ -19,6 +19,9 @@
      </br>
   ```docker ps```
 
+### Contributing
+See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidelines.
+
 ### 이슈 생성
 <a href="./.github/ISSUE_TEMPLATE">
     탬플릿
