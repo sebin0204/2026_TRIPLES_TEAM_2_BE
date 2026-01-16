@@ -1,20 +1,19 @@
 ---
-name: Feature request
-about: Suggest an idea for this project
-title: ''
-labels: ''
-assignees: ''
-
+name: ✨ Feature Request
+about: 기능 요청
+title: "[FEATURE] "
+labels: enhancement
 ---
 
-**Is your feature request related to a problem? Please describe.**
-A clear and concise description of what the problem is. Ex. I'm always frustrated when [...]
+## 기능 설명
+- 추가하고 싶은 기능 요약
 
-**Describe the solution you'd like**
-A clear and concise description of what you want to happen.
+## 목적
+- 왜 필요한가?
 
-**Describe alternatives you've considered**
-A clear and concise description of any alternative solutions or features you've considered.
+## API / 설계 아이디어
+- (선택)
 
-**Additional context**
-Add any other context or screenshots about the feature request here.
+## 고려 사항
+- DB 변경 여부:
+- 영향 범위:
