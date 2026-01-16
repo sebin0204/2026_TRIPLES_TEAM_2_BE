@@ -2,11 +2,14 @@ package com.team2.fabackend.domain.ledger;
 
 import com.team2.fabackend.domain.user.User; // 유저 엔티티 위치 확인 필요
 import jakarta.persistence.*;
+import com.team2.fabackend.domain.ledger.TransactionType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import java.time.LocalDateTime;
+
+import java.time.LocalDate;
+import java.time.LocalTime;
 
 @Entity
 @Getter
@@ -20,9 +23,23 @@ public class Ledger {
     private Long amount;      // 금액
     private String category;  // 카테고리
     private String memo;      // 메모
-    private LocalDateTime transactionDate; // 날짜
+
+    @Enumerated(EnumType.STRING)
+    private TransactionType type;
+
+    private LocalDate date; // 날짜
+    private LocalTime time;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
+
+    public void update(Long amount, String category, String memo, com.team2.fabackend.domain.ledger.TransactionType type, LocalDate date, LocalTime time) {
+        this.amount = amount;
+        this.category = category;
+        this.memo = memo;
+        this.type = type;
+        this.date = date;
+        this.time = time;
+    }
 }
