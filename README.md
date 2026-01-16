@@ -21,5 +21,10 @@
 
 ### 이슈 생성
 <a href="./.github/ISSUE_TEMPLATE">
-탬플릿
+    탬플릿
+</a>
+
+### PR 생성
+<a href="./.github/PULL_REQUEST_TEMPLATE.md">
+    탬플릿
 </a>
