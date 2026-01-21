@@ -20,3 +20,10 @@ spring:
         show_sql: true
         format_sql: true
         use_sql_comments: true
+
+ncp:
+  sms:
+    accessKey: ${NCP_ACCESS_KEY:dummy-access}
+    secretKey: ${NCP_SECRET_KEY:dummy-secret}
+    serviceId: ${NCP_SERVICE_ID:dummy-service}
+    sender: ${NCP_SENDER:01000000000}

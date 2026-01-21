@@ -16,6 +16,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
+
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -26,12 +28,15 @@ public class AuthService {
 
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
+    private final RefreshTokenService refreshTokenService;
+
+    private final Duration REFRESH_TOKEN_TTL = Duration.ofDays(7);
 
     @Transactional
     public SignupResponse signup(SignupRequest request) {
         phoneVerificationService.checkVerified(request.getPhoneNumber());
 
-        if (userReader.existsByEmail(request.getEmail())) {
+        if (userReader.existsByUserId(request.getUserId())) {
             throw new IllegalArgumentException("이미 가입된 이메일입니다.");
         }
 
@@ -40,22 +45,25 @@ public class AuthService {
         }
 
         User user = User.builder()
-                .email(request.getEmail())
+                .userId(request.getUserId())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .socialType(SocialType.LOCAL)
                 .name(request.getName())
                 .nickName(request.getNickName())
-                .birthYear(request.getBirthYear())
+                .birth(request.getBirth())
                 .phoneNumber(request.getPhoneNumber())
                 .build();
 
         userWriter.create(user);
 
+        phoneVerificationService.clearVerificationLog(request.getPhoneNumber());
+
         return new SignupResponse(user.getId());
     }
 
+    @Transactional
     public TokenPair login(LoginRequest request) {
-        User user = userReader.findByEmailAndSocialType(request.getEmail(), SocialType.LOCAL);
+        User user = userReader.findByUserIdAndSocialType(request.getUserId(), SocialType.LOCAL);
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new BadCredentialsException("비밀번호가 일치하지 않습니다");
@@ -64,20 +72,36 @@ public class AuthService {
         String accessToken = jwtProvider.createAccessToken(user.getId(), user.getUserType());
         String refreshToken = jwtProvider.createRefreshToken(user.getId());
 
-        return new TokenPair(accessToken, refreshToken); // Access Token은 Header, Refresh Token은 Body에서 처리
+        refreshTokenService.saveRefreshToken(user.getId(), refreshToken, REFRESH_TOKEN_TTL);
+
+        return new TokenPair(accessToken, refreshToken);
     }
 
     @Transactional
-    public String refreshAccessToken(String refreshToken) {
-
+    public TokenPair refreshAccessToken(String refreshToken) {
         if (!jwtProvider.validateToken(refreshToken)) {
             throw new IllegalArgumentException("유효하지 않은 리프레시 토큰");
         }
 
         Long userId = jwtProvider.getUserIdFromToken(refreshToken);
 
+        if (!refreshTokenService.validateRefreshToken(userId, refreshToken)) {
+            refreshTokenService.deleteRefreshToken(userId);
+            throw new IllegalArgumentException("토큰이 일치하지 않거나 이미 사용되었습니다.");
+        }
+
         User user = userReader.findById(userId);
 
-        return jwtProvider.createAccessToken(user.getId(), user.getUserType());
+        String newAccessToken = jwtProvider.createAccessToken(user.getId(), user.getUserType());
+        String newRefreshToken = jwtProvider.createRefreshToken(user.getId());
+
+        refreshTokenService.saveRefreshToken(user.getId(), newRefreshToken, REFRESH_TOKEN_TTL);
+
+        return new TokenPair(newAccessToken, newRefreshToken);
+    }
+
+    @Transactional
+    public void logout(Long userId) {
+        refreshTokenService.deleteRefreshToken(userId);
     }
 }
