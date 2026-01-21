@@ -1,6 +1,5 @@
 package com.team2.fabackend.global.security;
 
-
 import com.team2.fabackend.global.enums.UserType;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;

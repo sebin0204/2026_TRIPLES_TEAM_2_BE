@@ -10,10 +10,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Schema(description = "로그인 요청")
 public class LoginRequest {
-    @Schema(description = "이메일", example = "test@test.com")
+    @Schema(description = "아이디", example = "test")
     @NotBlank
-    @Email
-    private String email;
+    private String userId;
 
     @Schema(description = "비밀번호", example = "1234")
     @NotBlank

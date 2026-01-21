@@ -14,15 +14,15 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserReader {
     private final UserRepository userRepository;
 
-    public User findByEmailAndSocialType(String email, SocialType socialType) {
-        return userRepository.findByEmailAndSocialType(email, socialType)
+    public User findByUserIdAndSocialType(String userId, SocialType socialType) {
+        return userRepository.findByUserIdAndSocialType(userId, socialType)
                 .orElseThrow(() ->
                         new UsernameNotFoundException("존재하지 않는 사용자")
                 );
     }
 
-    public boolean existsByEmail(String email) {
-        return userRepository.existsByEmailAndSocialType(email, SocialType.LOCAL);
+    public boolean existsByUserId(String userId) {
+        return userRepository.existsByUserIdAndSocialType(userId, SocialType.LOCAL);
     }
 
     public boolean existsByPhoneNumber(String phoneNumber) {

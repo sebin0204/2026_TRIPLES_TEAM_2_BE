@@ -16,7 +16,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 @Entity
 @Getter
@@ -28,8 +28,10 @@ public class User extends BaseEntity {
     private Long id;
 
 //  Account info
+//    @Column(nullable = false, unique = true)
+//    private String email;
     @Column(nullable = false, unique = true)
-    private String email;
+    private String userId;
     @Column(nullable = false)
     private String password;
     @Column(nullable = false)
@@ -44,27 +46,30 @@ public class User extends BaseEntity {
     @Column(nullable = false)
     private String nickName;
     @Column(nullable = false)
-    private Integer birthYear;
+    private LocalDate birth;
     @Enumerated(value = EnumType.STRING)
     private UserType userType = UserType.USER;
 
     @Builder
     protected User(
-            String email,
+//          String email,
+            String userId,
             String password,
             SocialType socialType,
+
             String name,
             String nickName,
-            Integer birthYear,
+            LocalDate birth,
             String phoneNumber,
             UserType userType
     ) {
-        this.email = email;
+//      this.email = email;
+        this.userId = userId;
         this.password = password;
         this.socialType = socialType != null ? socialType : SocialType.LOCAL;
         this.name = name;
         this.nickName = nickName;
-        this.birthYear = birthYear;
+        this.birth = birth;
         this.phoneNumber = phoneNumber;
         this.userType = userType != null ? userType : UserType.USER;
     }

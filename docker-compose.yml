@@ -50,6 +50,8 @@ services:
     volumes:
       - redis-data:/data
     command: redis-server --appendonly yes
+    networks:
+      - spring_mysql_api
 
 networks:
   spring_mysql_api:
