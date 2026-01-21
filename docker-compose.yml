@@ -26,7 +26,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: ${ECR_REGISTRY}/fabackend:latest
+    image: ${ECR_REGISTRY}fabackend:latest
     container_name: spring_app
     env_file:
       - .env
