@@ -19,6 +19,9 @@
      </br>
   ```docker ps```
 
+### EC2 인스턴스 시작 시 해야할 것
+domain의 public ip 업데이트
+
 ### EC2 DB 접근 방법
 ```
 docker exec -it deploy-db mysql -u {mysql-user} -p
