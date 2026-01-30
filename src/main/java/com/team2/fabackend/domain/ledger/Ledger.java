@@ -1,6 +1,6 @@
 package com.team2.fabackend.domain.ledger;
 
-import com.team2.fabackend.domain.user.User; // 유저 엔티티 위치 확인 필요
+import com.team2.fabackend.domain.user.User;
 import jakarta.persistence.*;
 import com.team2.fabackend.domain.ledger.TransactionType;
 import lombok.AllArgsConstructor;
@@ -30,6 +30,8 @@ public class Ledger {
     private LocalDate date; // 날짜
     private LocalTime time;
 
+    private Long goalId;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
@@ -41,5 +43,6 @@ public class Ledger {
         this.type = type;
         this.date = date;
         this.time = time;
+        this.goalId = goalId;
     }
 }

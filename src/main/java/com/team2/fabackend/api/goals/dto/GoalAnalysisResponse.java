@@ -7,10 +7,7 @@ import lombok.Getter;
 @Builder
 public class GoalAnalysisResponse {
     private Long goalId;
-    private String title;
-    private Long targetAmount;
-    private Long currentSpend;
-    private Long remainingAmount;  // 남은 금액
-    private String analysisMessage;
-    private boolean isOver;        // 목표 초과 여부
+    private String analysisMessage; //분석 결과 메세지
+    private Long changedDays; //변동 목표 일수
+    private String type;
 }

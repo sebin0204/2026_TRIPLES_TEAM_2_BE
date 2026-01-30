@@ -1,7 +1,9 @@
 package com.team2.fabackend.api.goals;
 
+import com.team2.fabackend.api.goals.dto.GoalAnalysisResponse;
 import com.team2.fabackend.api.goals.dto.GoalRequest;
 import com.team2.fabackend.api.goals.dto.GoalResponse;
+import com.team2.fabackend.domain.goals.Goal;
 import com.team2.fabackend.service.goals.GoalService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
@@ -18,23 +20,14 @@ import java.util.Map;
 public class GoalController {
     private final GoalService goalService;
 
-    @GetMapping("/suggestion")
-    @Operation(summary = "목표 지출액 제안", description = "최근 3개월 지출 데이터를 기반으로 적정 목표액을 추천")
-    public ResponseEntity<Map<String, Long>> getSuggestion() {
-        Long suggestedAmount = goalService.suggestTargetAmount();
-
-        Map<String, Long> response = new HashMap<>();
-        response.put("suggestedAmount", suggestedAmount);
-
-        return ResponseEntity.ok(response);
-    }
-
+    //목표 설정/저장 (C)
     @PostMapping
     public ResponseEntity<Long> create(@RequestBody GoalRequest request) {
         Long goalId = goalService.createGoal(request);
         return ResponseEntity.ok(goalId);
     }
 
+    //목표 조회 (R)
     @GetMapping("/list")
     public ResponseEntity<Map<String, Object>> getGoalList() {
         List<GoalResponse> data = goalService.findAllGoals();
@@ -46,17 +39,24 @@ public class GoalController {
         return ResponseEntity.ok(response);
     }
 
-
-
+    //목표 수정(U)
     @PatchMapping("/{id}")
     public ResponseEntity<Void> update(@PathVariable Long id, @RequestBody GoalRequest request) {
         goalService.updateGoal(id, request);
         return ResponseEntity.ok().build();
     }
 
+    //목표 삭제(D)
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         goalService.deleteGoal(id);
         return ResponseEntity.ok().build();
+    }
+
+    //목표 달성 분석(R)
+    @GetMapping("/{id}/analysis")
+    public ResponseEntity<GoalAnalysisResponse> analyze(@PathVariable Long id) {
+        GoalAnalysisResponse analysis = goalService.analyzeGoal(id);
+        return ResponseEntity.ok(analysis);
     }
 }

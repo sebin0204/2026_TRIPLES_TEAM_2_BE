@@ -21,8 +21,10 @@ public class LedgerService {
                 .amount(request.getAmount())
                 .category(request.getCategory())
                 .memo(request.getMemo())
+                .type(request.getType())
                 .date(request.getDate())
                 .time(request.getTime())
+                .goalId(request.getGoalId())
                 .build();
 
         // DB에 저장

@@ -1,5 +1,6 @@
 package com.team2.fabackend.service.goals;
 
+import com.team2.fabackend.api.goals.dto.CategoryStatResponse;
 import com.team2.fabackend.api.goals.dto.GoalAnalysisResponse;
 import com.team2.fabackend.api.goals.dto.GoalRequest;
 import com.team2.fabackend.api.goals.dto.GoalResponse;
@@ -18,71 +19,52 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
+@Transactional(readOnly = true)
 public class GoalService {
     private final GoalRepository goalRepository;
     private final LedgerRepository ledgerRepository; //가계부 내역 확인용
 
-    //C
+    //C : 목표 설정 및 저장
+    @Transactional
     public Long createGoal(GoalRequest request) {
         Goal goal = Goal.builder()
                 .title(request.getTitle())
-                .content(request.getContent())
                 .targetAmount(request.getTargetAmount())
                 .startDate(request.getStartDate())
                 .endDate(request.getEndDate())
+                .memo(request.getMemo())
                 .build();
+
+        goal.calculateDailyAllowance();
 
         return goalRepository.save(goal).getId();
     }
 
-    //R
+    //R : 목표 조회(대시보드)
     public List<GoalResponse> findAllGoals() {
-        List<Goal> goals = goalRepository.findAll();
+        return goalRepository.findAll().stream().map(goal -> {
+            //현재까시 지출 누적 금액
+            Long totalSpent = sumSpentAmount(goal.getId(), goal.getStartDate(), LocalDate.now());
 
-        return goals.stream().map(goal -> {
-            // 해당 목표 기간 동안 실제 지출한 금액 합산
-            Long currentSpend = ledgerRepository.findByDateBetween(goal.getStartDate(), goal.getEndDate())
-                    .stream()
-                    .filter(ledger -> ledger.getType() == TransactionType.EXPENSE) // 지출만 계산
-                    .mapToLong(Ledger::getAmount)
-                    .sum();
+            //누적 허용 지출 (E*경과일)
+            long passedDays = java.time.temporal.ChronoUnit.DAYS.between(goal.getStartDate(), goal.getEndDate());
+            double cumulativeAllowance = goal.getDailyAllowance() * Math.max(0, passedDays);
 
-            // progressRate = (실제 지출 / 사용자가 정한 목표액) * 100
-            int rate = 0;
-            if (goal.getTargetAmount() > 0) { // 0으로 나누기 방지
-                rate = (int) ((double) currentSpend / goal.getTargetAmount() * 100);
-            }
+            //미래 목표 달성까지의 상태값(안전, 주의, 위험)
+            String status = determineStatus(totalSpent, cumulativeAllowance);
+
+            List<CategoryStatResponse> categoryStats = ledgerRepository.findCategoryStatsBetweenDates(
+                    goal.getStartDate(), LocalDate.now());
 
             return GoalResponse.builder()
                     .id(goal.getId())
                     .title(goal.getTitle())
-                    //.termCategory(goal.getTermCategory())
                     .targetAmount(goal.getTargetAmount())
-                    .currentConsumeAmount(currentSpend)
-                    .progressRate(rate)
+                    .currentSpend(totalSpent)
+                    .status(status)
+                    .categoryStats(categoryStats)
                     .build();
         }).collect(Collectors.toList());
-    }
-
-    //suggest
-    public Long suggestTargetAmount() {
-        LocalDate endDate = LocalDate.now();
-        LocalDate startDate = endDate.minusMonths(3);
-
-        //최근 3개월간의 총 지출액
-        List<Ledger> recentLedgers = ledgerRepository.findByDateBetween(startDate, endDate);
-
-        long totalExpense = recentLedgers.stream()
-                .filter(l -> l.getType() == TransactionType.EXPENSE)
-                .mapToLong(Ledger::getAmount)
-                .sum();
-
-        long monthlyAverage = totalExpense / 3;
-
-        // 평균보다 10% 적은 금액을 제안
-        long suggestedAmount = (long) (monthlyAverage * 0.9);
-        return (suggestedAmount / 10000) * 10000;
     }
 
     //U
@@ -90,7 +72,7 @@ public class GoalService {
     public void updateGoal(Long id, GoalRequest request) {
         Goal goal = goalRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("목표가 없습니다. id=" + id));
-        goal.update(request.getTitle(), request.getContent(), request.getTargetAmount());
+        goal.update(request.getTitle(), request.getTargetAmount(), request.getStartDate(), request.getEndDate(), request.getMemo());
     }
 
     //D
@@ -104,34 +86,43 @@ public class GoalService {
         Goal goal = goalRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("목표를 찾을 수 없습니다. id=" + id));
 
-        // 현재까지 총 지출액
-        Long currentSpend = ledgerRepository.findByDateBetween(goal.getStartDate(), goal.getEndDate())
-                .stream()
-                .filter(l -> l.getType() == TransactionType.EXPENSE)
-                .mapToLong(Ledger::getAmount)
-                .sum();
+        Long totalSpent = sumSpentAmount(goal.getId(), goal.getStartDate(), LocalDate.now().plusDays(1));
+        System.out.println("DEBUG >>> GoalId: " + id + ", 조회된 총 지출액: " + totalSpent);
 
-        // 남은 금액 및 상태 분석
-        Long remaining = goal.getTargetAmount() - currentSpend;
-        boolean isOver = remaining < 0;
+        Double E = goal.getDailyAllowance();
+        long passedDays = java.time.temporal.ChronoUnit.DAYS.between(goal.getStartDate(), LocalDate.now().plusDays(1));
 
+        //(실제 지출 - (E*경과일))/E
+        double diff = totalSpent - (E*passedDays);
+        long changedDays = Math.round(Math.abs(diff/E));
+
+        String type;
         String message;
-        if (isOver) {
-            message = "목표 금액을 초과했어요! 소비를 멈춰주세요";
-        } else if (remaining < goal.getTargetAmount() * 0.2) {
-            message = "목표 금액에 거의 다 왔어요! 조금만 더 힘내보세요";
+
+        if (diff > 0) {
+            type = "DELAYED"; // 초과 소비 -> 지연 (+)
+            message = String.format("이 소비를 지속하면 목표 달성까지 약 %d일이 더 필요해요.", changedDays);
         } else {
-            message = "잘하고 계시네요! 지금처럼만 유지하세요";
+            type = "SHORTENED"; // 절약 소비 -> 단축 (-)
+            message = String.format("오늘의 소비로 목표 달성일을 약 %d일 단축시키고 있어요!", changedDays);
         }
 
         return GoalAnalysisResponse.builder()
                 .goalId(goal.getId())
-                .title(goal.getTitle())
-                .targetAmount(goal.getTargetAmount())
-                .currentSpend(currentSpend)
-                .remainingAmount(Math.max(0, remaining))
+                .changedDays(changedDays)
+                .type(type)
                 .analysisMessage(message)
-                .isOver(isOver)
                 .build();
+    }
+
+    private Long sumSpentAmount(Long goalId, LocalDate start, LocalDate end) {
+        Long total = ledgerRepository.sumExpenseAmountBetween(goalId, start, end);
+        return total != null ? total : 0L; // 데이터가 없을 경우 0 반환
+    }
+
+    private String determineStatus(Long spent, double allowance) {
+        if (spent > allowance * 1.1) return "위험";
+        if (spent > allowance) return "주의";
+        return "안전";
     }
 }

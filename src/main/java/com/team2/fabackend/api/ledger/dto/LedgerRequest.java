@@ -12,7 +12,7 @@ public class LedgerRequest {
     private String category;
     private String memo;
     private TransactionType type; //수입 지출 이체 선택
-
     private LocalDate date = LocalDate.now();
     private LocalTime time = LocalTime.now();
+    private Long goalId;
 }
