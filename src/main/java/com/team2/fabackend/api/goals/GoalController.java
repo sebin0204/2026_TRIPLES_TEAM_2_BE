@@ -22,8 +22,8 @@ public class GoalController {
 
     //목표 설정/저장 (C)
     @PostMapping
-    public ResponseEntity<Long> create(@RequestBody GoalRequest request) {
-        Long goalId = goalService.createGoal(request);
+    public ResponseEntity<Long> create(@RequestBody GoalRequest request, @RequestParam Long userId) {
+        Long goalId = goalService.createGoal(request, userId);
         return ResponseEntity.ok(goalId);
     }
 

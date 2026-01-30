@@ -1,5 +1,6 @@
 package com.team2.fabackend.domain.goals;
 
+import com.team2.fabackend.domain.user.User;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDate;
@@ -11,6 +12,10 @@ import java.time.temporal.ChronoUnit;
 @AllArgsConstructor
 @Builder
 public class Goal {
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private User user;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

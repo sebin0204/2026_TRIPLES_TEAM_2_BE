@@ -11,10 +11,10 @@ import java.util.List;
 public interface LedgerRepository extends JpaRepository<Ledger, Long> {
     // 기간 내 지출 합계 계산 (분석 로직의 핵심)
     @Query("SELECT SUM(l.amount) FROM Ledger l " +
-            "WHERE l.goalId = :goalId " +
+            "WHERE l.userId = :userId " +
             "AND l.date BETWEEN :start AND :end " +
             "AND l.type = 'EXPENSE'")
-    Long sumExpenseAmountBetween(@Param("goalId") Long goalId,
+    Long sumExpenseAmountBetween(@Param("userId") Long userId,
                                  @Param("start") LocalDate start,
                                  @Param("end") LocalDate end);
 

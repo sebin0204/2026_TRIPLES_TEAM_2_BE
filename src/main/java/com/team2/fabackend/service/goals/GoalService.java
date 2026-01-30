@@ -9,6 +9,8 @@ import com.team2.fabackend.domain.goals.GoalRepository;
 import com.team2.fabackend.domain.ledger.Ledger;
 import com.team2.fabackend.domain.ledger.LedgerRepository;
 import com.team2.fabackend.domain.ledger.TransactionType;
+import com.team2.fabackend.domain.user.User;
+import com.team2.fabackend.domain.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,11 +25,14 @@ import java.util.stream.Collectors;
 public class GoalService {
     private final GoalRepository goalRepository;
     private final LedgerRepository ledgerRepository; //가계부 내역 확인용
+    private final UserRepository userRepository;
 
     //C : 목표 설정 및 저장
     @Transactional
-    public Long createGoal(GoalRequest request) {
+    public Long createGoal(GoalRequest request, Long userId) {
+        User user = userRepository.findById(userId).orElseThrow(()->new IllegalArgumentException("유저를 찾을 수 없습니다")); //유저 조회
         Goal goal = Goal.builder()
+                .user(user)
                 .title(request.getTitle())
                 .targetAmount(request.getTargetAmount())
                 .startDate(request.getStartDate())
@@ -44,7 +49,7 @@ public class GoalService {
     public List<GoalResponse> findAllGoals() {
         return goalRepository.findAll().stream().map(goal -> {
             //현재까시 지출 누적 금액
-            Long totalSpent = sumSpentAmount(goal.getId(), goal.getStartDate(), LocalDate.now());
+            Long totalSpent = sumSpentAmount(goal.getUser().getId(), goal.getStartDate(), LocalDate.now());
 
             //누적 허용 지출 (E*경과일)
             long passedDays = java.time.temporal.ChronoUnit.DAYS.between(goal.getStartDate(), goal.getEndDate());
@@ -86,7 +91,8 @@ public class GoalService {
         Goal goal = goalRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("목표를 찾을 수 없습니다. id=" + id));
 
-        Long totalSpent = sumSpentAmount(goal.getId(), goal.getStartDate(), LocalDate.now().plusDays(1));
+        Long userId = goal.getUser().getId();
+        Long totalSpent = sumSpentAmount(userId, goal.getStartDate(), LocalDate.now().plusDays(1));
         System.out.println("DEBUG >>> GoalId: " + id + ", 조회된 총 지출액: " + totalSpent);
 
         Double E = goal.getDailyAllowance();
@@ -115,8 +121,8 @@ public class GoalService {
                 .build();
     }
 
-    private Long sumSpentAmount(Long goalId, LocalDate start, LocalDate end) {
-        Long total = ledgerRepository.sumExpenseAmountBetween(goalId, start, end);
+    private Long sumSpentAmount(Long userId, LocalDate start, LocalDate end) {
+        Long total = ledgerRepository.sumExpenseAmountBetween(userId, start, end);
         return total != null ? total : 0L; // 데이터가 없을 경우 0 반환
     }
 
