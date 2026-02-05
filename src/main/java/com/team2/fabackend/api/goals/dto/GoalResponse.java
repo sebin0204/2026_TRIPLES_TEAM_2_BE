@@ -15,4 +15,7 @@ public class GoalResponse {
     private String status;
     public int progressRate; //진행률(목표달성률?)
     private List<CategoryStatResponse> categoryStats;
+    private double successRate;  // 성공률
+    private long changedDays;    // 지연 또는 단축된 날짜
+    private boolean isDelayed;   // true면 지연(+), false면 단축(-)
 }

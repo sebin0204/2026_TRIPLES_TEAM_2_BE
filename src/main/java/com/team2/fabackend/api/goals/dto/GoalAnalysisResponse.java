@@ -10,4 +10,5 @@ public class GoalAnalysisResponse {
     private String analysisMessage; //분석 결과 메세지
     private Long changedDays; //변동 목표 일수
     private String type;
+    private double successRate;
 }
