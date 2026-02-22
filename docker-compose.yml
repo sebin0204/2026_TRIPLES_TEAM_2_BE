@@ -51,7 +51,14 @@ services:
     container_name: spring_app
     env_file:
       - .env
+    volumes:
+      # [EC2 서버의 프롬프트 폴더 절대경로] : [컨테이너 내부 경로]
+      - /home/ubuntu/2026_TRIPLES_TEAM_2_BE/src/main/resources/prompts:/app/prompts
     environment:
+      PROMPT_ADVICE_SYSTEM: file:/app/prompts/advice/generateAdviceSystem.st
+      PROMPT_ADVICE_USER: file:/app/prompts/advice/generateAdvice.st
+      PROMPT_AIREPORT_SYSTEM: file:/app/prompts/aiReport/generateAiReportSystem.st
+      PROMPT_AIREPORT_USER: file:/app/prompts/aiReport/generateAiReport.st
       SPRING_PROFILES_ACTIVE: dev
       SPRING_DATASOURCE_URL: ${DB_JDBC_URL}
       SPRING_DATASOURCE_USERNAME: ${DB_USER}
