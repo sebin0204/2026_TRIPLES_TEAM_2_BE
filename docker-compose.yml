@@ -51,7 +51,13 @@ services:
     container_name: spring_app
     env_file:
       - .env
+    volumes:
+      - ./src/main/resources/prompts:/app/prompts
     environment:
+      PROMPT_ADVICE_SYSTEM: file:/app/prompts/advice/generateAdviceSystem.st
+      PROMPT_ADVICE_USER: file:/app/prompts/advice/generateAdvice.st
+      PROMPT_AIREPORT_SYSTEM: file:/app/prompts/aiReport/generateAiReportSystem.st
+      PROMPT_AIREPORT_USER: file:/app/prompts/aiReport/generateAiReport.st
       SPRING_PROFILES_ACTIVE: dev
       SPRING_DATASOURCE_URL: ${DB_JDBC_URL}
       SPRING_DATASOURCE_USERNAME: ${DB_USER}
