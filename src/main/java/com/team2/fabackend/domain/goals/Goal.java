@@ -66,4 +66,30 @@ public class Goal {
         this.dailyAllowance = (double) this.targetAmount / days;
     }
 
+    public void subtractCurrentAmount(Long amount) {
+        if(this.currentAmount == null) {
+            this.currentAmount = 0L;
+        }
+        this.currentAmount -= amount;
+    }
+
+    public double calculateVarianceDays() {
+        if(this.dailyAllowance == null || this.dailyAllowance == 0) return 0;
+
+        long passedDays = ChronoUnit.DAYS.between(startDate, LocalDate.now());
+        if(passedDays <= 0) passedDays = 1;
+
+        double expectedSpending = this.dailyAllowance * passedDays;
+        return (expectedSpending - this.currentAmount) / this.dailyAllowance;
+    }
+
+    public double calculateSuccessRate() {
+        long totalDays = ChronoUnit.DAYS.between(startDate, endDate);
+        if (totalDays <= 0) return 100.0;
+
+        double varianceDays = calculateVarianceDays();
+        double successRate = ((totalDays + varianceDays) / totalDays) * 100;
+
+        return Math.max(0, Math.min(100, successRate));
+    }
 }

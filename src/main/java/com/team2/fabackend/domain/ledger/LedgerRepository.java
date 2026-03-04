@@ -26,6 +26,18 @@ public interface LedgerRepository extends JpaRepository<Ledger, Long> {
                                  @Param("start") LocalDate start,
                                  @Param("end") LocalDate end);
 
+    @Query("SELECT SUM(CASE WHEN l.type = 'INCOME' THEN l.amount ELSE -l.amount END) " +
+            "FROM Ledger l WHERE l.userId = :userId")
+    Long getBalanceByUserId(@Param("userId") Long userId);
+
+    @Query("SELECT SUM(l.amount) FROM Ledger l " +
+            "WHERE l.userId = :userId " +
+            "AND l.date BETWEEN :start AND :end " +
+            "AND l.type = 'INCOME'")
+    Long sumIncomeAmountBetween(@Param("userId") Long userId,
+                                @Param("start") LocalDate start,
+                                @Param("end") LocalDate end);
+
     @Query("SELECT AVG(l.amount) FROM Ledger l JOIN User u ON l.userId = u.id " +
             "WHERE u.birth BETWEEN :startDate AND :endDate " +
             "AND l.type = 'EXPENSE' " +
@@ -44,6 +56,16 @@ public interface LedgerRepository extends JpaRepository<Ledger, Long> {
             "AND l.type = 'EXPENSE' " +
             "GROUP BY l.category")
     List<CategoryStatResponse> findCategoryStatsBetweenDates(
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate
+    );
+
+    @Query("SELECT new com.team2.fabackend.api.goals.dto.CategoryStatResponse(l.category, SUM(l.amount)) " +
+            "FROM Ledger l " +
+            "WHERE l.date BETWEEN :startDate AND :endDate " +
+            "AND l.type = 'INCOME' " +
+            "GROUP BY l.category")
+    List<CategoryStatResponse> findIncomeCategoryStatsBetweenDates(
             @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate
     );
@@ -67,10 +89,9 @@ public interface LedgerRepository extends JpaRepository<Ledger, Long> {
     );
 
     @Query("SELECT new com.team2.fabackend.domain.ledger.MonthlyLedgerDetailResponse(" +
-            "l.category, l.amount, l.date, l.time) " +
+            "l.category, l.amount, l.date, l.time, l.type) " +
             "FROM Ledger l " +
             "WHERE l.userId = :userId " +
-            "AND l.type = 'EXPENSE' " +
             "AND l.date BETWEEN :startDate AND :endDate " +
             "ORDER BY l.date DESC, l.time DESC")
     List<MonthlyLedgerDetailResponse> findMonthlyLedgerDetailsByUserId(

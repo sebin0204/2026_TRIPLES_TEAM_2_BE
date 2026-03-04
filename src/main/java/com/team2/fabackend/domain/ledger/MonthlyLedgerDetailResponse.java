@@ -13,4 +13,5 @@ public class MonthlyLedgerDetailResponse {
     private Long amount;
     private LocalDate date;
     private LocalTime time;
+    private TransactionType type;
 }

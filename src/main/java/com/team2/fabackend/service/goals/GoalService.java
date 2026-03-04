@@ -60,7 +60,7 @@ public class GoalService {
 
             String status = determineStatus(totalSpent, cumulativeAllowance);
 
-            double successRate = calculateSuccessRate(goal, diff, changedDays);
+            double successRate = calculateSuccessRate(goal, diff);
 
             List<CategoryStatResponse> categoryStats = ledgerRepository.findCategoryStatsBetweenDates(
                     goal.getStartDate(), LocalDate.now());
@@ -87,23 +87,19 @@ public class GoalService {
                 .filter(goal -> !today.isBefore(goal.getStartDate()) && !today.isAfter(goal.getEndDate()))
                 .map(goal -> {
                     Long totalSpent = goal.getCurrentAmount();
-
                     Double E = goal.getDailyAllowance();
-                    long passedDays = java.time.temporal.ChronoUnit.DAYS.between(goal.getStartDate(), LocalDate.now());
-                    double cumulativeAllowance = E * Math.max(0, passedDays);
+                    long passedDays = java.time.temporal.ChronoUnit.DAYS.between(goal.getStartDate(), today);
 
-                    double diff = totalSpent - cumulativeAllowance;
+                    double diff = totalSpent - (E * Math.max(0, passedDays));
                     long changedDays = Math.round(Math.abs(diff / E));
-
-                    String status = determineStatus(totalSpent, cumulativeAllowance);
 
                     return GoalResponse.builder()
                             .id(goal.getId())
                             .title(goal.getTitle())
                             .targetAmount(goal.getTargetAmount())
                             .currentSpend(totalSpent)
-                            .status(status)
-                            .successRate(calculateSuccessRate(goal, diff, changedDays))
+                            .status(determineStatus(totalSpent, E*Math.max(0,passedDays)))
+                            .successRate(calculateSuccessRate(goal, diff))
                             .changedDays(changedDays)
                             .isDelayed(diff > 0)
                             .build();
@@ -138,26 +134,16 @@ public class GoalService {
         double diff = totalSpent - (E * passedDays);
         long changedDays = Math.round(Math.abs(diff / E));
 
-        long totalPeriod = java.time.temporal.ChronoUnit.DAYS.between(goal.getStartDate(), goal.getEndDate());
-        if (totalPeriod <= 0) totalPeriod = 1;
-        long delayedDaysForRate = (diff > 0) ? changedDays : 0;
-        double successRate = Math.max(0, Math.round(((double) (totalPeriod - delayedDaysForRate) / totalPeriod * 100) * 10) / 10.0);
+        double successRate = calculateSuccessRate(goal, diff);
 
-        String type;
-        String message;
-
-        if (diff > 0) {
-            type = "DELAYED";
-            message = String.format("목표 기간 중 소비로 인해 약 %d일이 사라졌어요. 달성까지 %d일이 더 필요해요.", changedDays, changedDays);
-        } else {
-            type = "SHORTENED";
-            message = String.format("오늘의 절약으로 목표 성공률을 %.1f%%로 유지하고 있어요! 목표일을 %d일 단축시켰습니다.", successRate, changedDays);
-        }
+        String message = (diff > 0)
+                ? String.format("과소비로 인해 약 %d일이 지연 중이에요. 조금만 더 힘내볼까요?", changedDays)
+                : String.format("수입과 절약 덕분에 목표일을 %d일 단축했어요! 성공률 %.1f%%로 아주 잘하고 계시네요.", changedDays, successRate);
 
         return GoalAnalysisResponse.builder()
                 .goalId(goal.getId())
                 .changedDays(changedDays)
-                .type(type)
+                .type(diff > 0 ? "DELAYED" : "SHORTENED")
                 .successRate(successRate)
                 .analysisMessage(message)
                 .build();
@@ -169,12 +155,13 @@ public class GoalService {
         return "안전";
     }
 
-    private double calculateSuccessRate(Goal goal, double diff, long changedDays) {
+    private double calculateSuccessRate(Goal goal, double diff) {
         long totalPeriod = java.time.temporal.ChronoUnit.DAYS.between(goal.getStartDate(), goal.getEndDate());
         if (totalPeriod <= 0) totalPeriod = 1;
 
-        long delayedDaysForRate = (diff > 0) ? changedDays : 0;
+        double varianceDays = -(diff / goal.getDailyAllowance());
+        double rate = ((double) (totalPeriod + varianceDays)) / totalPeriod * 100;
 
-        return Math.max(0, Math.round(((double) (totalPeriod - delayedDaysForRate) / totalPeriod * 100) * 10) / 10.0);
+        return Math.max(0, Math.min(100, Math.round(rate*10)/10.0));
     }
 }
