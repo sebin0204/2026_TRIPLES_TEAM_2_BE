@@ -11,7 +11,8 @@ import java.time.LocalTime;
 @Getter
 public class LedgerRequest {
     private Long amount;
-    private String category;
+    private Long categoryId;
+    private Long subCategoryId;
     private String memo;
     private TransactionType type;
     private LocalDate date = LocalDate.now();
